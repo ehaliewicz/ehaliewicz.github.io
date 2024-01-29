@@ -9,10 +9,10 @@
 ### [Source code](github.com/ehaliewicz/manifold).
 
 #### A dark hallway
-![A dark hallway]("ehaliewicz.github.io/manifold_1.png")
+![A dark hallway]("manifold_1.png")
 
 #### A key in the room beyond
-![ A key in the room beyond]("ehaliewicz.github.io//manifold_0.png")
+![ A key in the room beyond]("manifold_0.png")
 
 ## Voxel renderer
 
