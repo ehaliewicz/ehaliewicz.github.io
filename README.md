@@ -6,7 +6,7 @@
 
 ### A project to create an advanced 2.5D Graphics engine and map creation toolkit, for Sega Megadrive/Genesis.
 
-### [Code](github.com/ehaliewicz/manifold).
+### [Source code](github.com/ehaliewicz/manifold).
 
 #### A dark hallway
 ![A dark hallway]("ehaliewicz.github.io/manifold_1.png")
@@ -18,4 +18,4 @@
 
 ### A CPU powered (no GPU!) 5DOF voxel renderer, supporting transparency and deferred lighting, using cached-based optimizations and AVX2.
 
-### [Code](github.com/ehaliewicz/voxel).
+### [Source code](github.com/ehaliewicz/voxel).
