@@ -1,5 +1,4 @@
-# ehaliewicz.github.io
-Portfolio site :)
+# Erik Haliewicz's personal github page.
 
 # Projects
 
@@ -8,6 +7,12 @@ Portfolio site :)
 ### A project to create an advanced 2.5D Graphics engine and map creation toolkit, for Sega Megadrive/Genesis.
 
 ### [Code](github.com/ehaliewicz/manifold).
+
+#### A dark hallway
+![A dark hallway]("manifold_1.png")
+
+#### A key in the room beyond
+![ A key in the room beyond]("manifold_0.png")
 
 ## Voxel renderer
 
