@@ -6,7 +6,7 @@
 
 ### A CPU powered (no GPU!) 5DOF voxel renderer, supporting transparency and deferred lighting, using cached-based optimizations and AVX2.
 
-### [Source code](github.com/ehaliewicz/voxel).
+### [Source code](https://github.com/ehaliewicz/voxel).
 
 #### A foggy morning on rocket island
 
@@ -20,7 +20,7 @@
 
 ### A project to create an advanced 2.5D Graphics engine and map creation toolkit, for Sega Megadrive/Genesis.
 
-### [Source code](github.com/ehaliewicz/manifold).
+### [Source code](https://github.com/ehaliewicz/manifold).
 
 #### A dark hallway
 ![A dark hallway](manifold_1.png)
@@ -32,11 +32,11 @@
 
 ### I was dissatisfied with existing tools for time tracking, so I decided to make my own.  Can be used for any kind of time tracking, but specifically tuned for my language learning needs.
 
-### I avoided typescript and react, and used javascript, preact, and htm so no builds were required and page load times were kept minimal.  
+### The backend is powered by python, django and postgres.  For the frontend, I avoided typescript, using javascript, preact, and htm so no builds were required and page load times were kept minimal.  
 
-### This project is "complete", and is no longer under active development, aside from rare bugfixes, as it does just about everything I need.
+### This project does just about everything I need now, and is no longer under active development, aside from rare bugfixes.
 
-### [Source code](github.com/ehaliewicz/time-tracker).
+### [Source code](https://github.com/ehaliewicz/time-tracker).
 
 #### Daily todo list UI
 ![Daily todo list UI](todo_list_0.png)
