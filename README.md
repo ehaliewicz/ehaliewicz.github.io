@@ -28,11 +28,13 @@
 #### A key in the room beyond
 ![ A key in the room beyond](manifold_0.png)
 
-## Language Immersion Time Tracker
+## Language Immersion Time Tracker (2022-2023)
 
 ### I was dissatisfied with existing tools for time tracking, so I decided to make my own.  Can be used for any kind of time tracking, but specifically tuned for my language learning needs.
 
-### I avoided typescript and react, and used javascript, preact, and htm so no builds were required and page load times were kept minimal.
+### I avoided typescript and react, and used javascript, preact, and htm so no builds were required and page load times were kept minimal.  
+
+### This project is "complete", and is no longer under active development, aside from rare bugfixes, as it does just about everything I need.
 
 ### [Source code](github.com/ehaliewicz/time-tracker).
 
