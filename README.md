@@ -41,6 +41,13 @@
 #### A key in the room beyond
 ![ A key in the room beyond](manifold_0.png)
 
+### While working on this project, I had to discover, as well as reinvent many optimization techniques.  The sega genesis/megadrive is not intended to run 3D games (or even 2.5D), and so many barriers had to be broken.  
+### First of all, the system is based on 8x8 pixel tiles, so I had to develop a system to store a framebuffer in RAM, and use DMA (direct memory access) to quickly copy it to VRAM.  This required an unusual, 4px column-oriented framebuffer, and precalculating indexes to columns.
+### Second, the 68000 CPU does not have the horsepower to do any fancy pixel effects.  We have roughly 450,000 cycles per frame (at a target of 15fps), and 40,000 pixels to fill, so we have ~11 cycles we can spend per pixel.  
+### To reach this target, I draw four pixels at a time, which trades visual quality for performance, and I pre-calculate texture mapping and flat color filling routines, so the only per-pixel-quad work is either a single immediate move (for flat color walls or floors) `move.w #1234, 4321(a0)`, 12 cycles, or a single indirect indexed move, for textured walls. `move.w 1234(a0), 4321(a1)`, at 16 cycles.
+### There are other tricks involved in the engine, portal rendering, PVS, etc, too many to discuss in detail here :)
+
+
 ## Language Immersion Time Tracker (2022-2023)
 
 ### I was dissatisfied with existing tools for time tracking, so I decided to make my own.  Can be used for any kind of time tracking, but specifically tuned for my language learning needs.
