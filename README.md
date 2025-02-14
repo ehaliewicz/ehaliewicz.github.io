@@ -22,7 +22,7 @@
 ### I also wrote multi-threading code to process different chunks of the framebuffer in parallel, as well as used SIMD intrinsics (AVX2) to greatly improve the overall performance of the renderer after cache optimizations were introduced.
 ### As a result of these optimizations, the renderer runs at around 60-100fps at 1080p, depending on your CPU and the scene being rendered.
 
-### Deferred shading is implemented by storing diffuse color and transparency coverage, world voxel position, (compressed) normal map into separate buffers while the voxel world is being traversed.  
+### Deferred shading is implemented by storing diffuse color and transparency coverage, world voxel position, and (compressed) normals into separate buffers while the voxel world is being traversed.  
 ### When transparent voxels are encounted, we update the values in the opaque color and transparency coverage buffer, but aside from that case each pixel is only drawn to once. 
 ### A second pass does a single linear pass over the output buffer pixels, using AVX2 to load and process the pixel information to rotate, light, and blend up to 8 pixels at once.  
 
