@@ -41,6 +41,8 @@
 #### A key in the room beyond
 ![ A key in the room beyond](manifold_0.png)
 
+ ![Map Editor](editor_screenshot.png)
+
 ### While working on this project, I had to discover, as well as reinvent many optimization techniques.  The sega genesis/megadrive is not intended to run 3D games (or even 2.5D), and so many barriers had to be broken.  
 ### First of all, the system is based on 8x8 pixel tiles, so I had to develop a system to store a framebuffer in RAM, and use DMA (direct memory access) to quickly copy it to VRAM.  This required an unusual, 4px column-oriented framebuffer, and precalculating indexes to columns.
 ### Second, the 68000 CPU does not have the horsepower to do any fancy pixel effects.  We have roughly 450,000 cycles per frame (at a target of 15fps), and 40,000 pixels to fill, so we have ~11 cycles we can spend per pixel.  
