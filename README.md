@@ -18,8 +18,8 @@
 ![Voxel city](vox_city.png)
 
 #### Videos
-[![Video](https://img.youtube.com/vi/xjlQ-fhrC9A/0.jpg)](https://www.youtube.com/embed/xjlQ-fhrC9A)
-[![Video](https://img.youtube.com/vi/V8qHlTwUiV0/0.jpg)](https://www.youtube.com/embed/V8qHlTwUiV0)
+[![Video](https://img.youtube.com/vi/xjlQ-fhrC9A/0.jpg)](https://youtu.be/xjlQ-fhrC9A)
+[![Video](https://img.youtube.com/vi/V8qHlTwUiV0/0.jpg)](https://youtu.be/V8qHlTwUiV0)
 
 
 ### While working on this project, to make up for the lack of performance relative to a GPU, I experimented with optimizing data-structures for faster access via the CPU caches, using techniques like swizzling (voxel columns that are nearby in 3d-space are nearby in memory addresses as well), and using SoA style techniques and bit-packing to reduce bandwidth costs and improve cache-hit rate.
