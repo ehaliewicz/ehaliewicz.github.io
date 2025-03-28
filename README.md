@@ -17,6 +17,10 @@
 
 ![Voxel city](vox_city.png)
 
+#### Videos
+[![Video](https://img.youtube.com/vi/xjlQ-fhrC9A/0.jpg)](https://www.youtube.com/embed/xjlQ-fhrC9A)
+[![Video](https://img.youtube.com/vi/V8qHlTwUiV0/0.jpg)](https://www.youtube.com/embed/V8qHlTwUiV0)
+
 
 ### While working on this project, to make up for the lack of performance relative to a GPU, I experimented with optimizing data-structures for faster access via the CPU caches, using techniques like swizzling (voxel columns that are nearby in 3d-space are nearby in memory addresses as well), and using SoA style techniques and bit-packing to reduce bandwidth costs and improve cache-hit rate.
 ### I also wrote multi-threading code to process different chunks of the framebuffer in parallel, as well as used SIMD intrinsics (AVX2) to greatly improve the overall performance of the renderer after cache optimizations were introduced.
@@ -25,8 +29,6 @@
 ### Deferred shading is implemented by storing diffuse color and transparency coverage, world voxel position, and (compressed) normals into separate buffers while the voxel world is being traversed.  
 ### When transparent voxels are encounted, we update the values in the opaque color and transparency coverage buffer, but aside from that case each pixel is only drawn to once. 
 ### A second pass does a single linear pass over the output buffer pixels, using AVX2 to load and process the pixel information to rotate, light, and blend up to 8 pixels at once.  
-
-
 
 
 ## Manifold (2020-current)
