@@ -2,7 +2,7 @@
 
 # Projects
 
-## Voxel renderer (2023-current)
+## Voxel renderer (2023-2025)
 
 ### A CPU powered (no GPU!) 5DOF voxel renderer, supporting arbitrary voxel geometry, transparency, deferred shading, and horizon fogging.  5DOF means that the camera can rotate left and right, roll left and right, move up/down, left/right, forward/back.  It cannot do correct pitch up/down (the rendering algorithm is a distant cousin of the voxelspace comanche style voxel renderer), but it can shear the projected voxels to approximate the affect in screen-space.
 
