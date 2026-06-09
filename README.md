@@ -4,7 +4,7 @@
 
 ### I like working on graphics, compilers, games and all kinds of other cool projects.
 
-# Links (links.md)
+# [Links](links.md)
 
 # Projects
 Here are some of the projects I've been working on recently.
