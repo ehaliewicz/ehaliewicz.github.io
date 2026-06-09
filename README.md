@@ -1,6 +1,11 @@
 # Erik Haliewicz's personal github page.
 
+## Hello!
+
+### I like working on graphics, compilers, games and all kinds of other cool projects.
+
 # Projects
+Here are some of the projects I've been working on recently.
 
 ## Voxel renderer (2023-2025)
 
