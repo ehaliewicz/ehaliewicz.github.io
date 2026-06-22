@@ -2,10 +2,28 @@
 
 ## Hello!
 
-### I like working on graphics, compilers, games and all kinds of other cool projects.
+### I love working on graphics, compilers, and games. 
 
 # Projects
 Here are some of the projects I've been working on recently.
+
+## 6DOF Raycast engine (2025-current)
+
+### [Source code](https://github.com/ehaliewicz/raycaster).
+
+
+### After figuring out how a 6dof camera can work in a "2.5D" engine, I decided to go back to a simple grid map format.  
+### In addition to 6 degrees of freedom (pitch, roll, yaw, and translation in all 3 axes), this engine supports slopes, 45 degree walls, floor and ceiling heights, per-face lighting, z-buffered sprites, and real-time editing.
+### You can edit and build a map in real-time, and your changes are saved when you exit.
+
+
+#### Slopes and 6dof camera controls in a 2.5D raycaster
+
+![Raycasted slopes](raycaster_6dof.png)
+
+#### Real-time editing in the raycaster engine
+
+![Real-time editing](raycaster_editing.png)
 
 ## Voxel renderer (2023-2025)
 
