@@ -390,9 +390,37 @@ function setupConn(conn) {
     updatePeerCount();
   });
 
-  conn.on('data', data => {
-    console.log('[P2P] Data from', conn.peer, ':', data && data.type);
-    handleMessage(conn.peer, data);
+  conn.on('data', raw => {
+    if (typeof raw !== 'string') { console.warn('[P2P] Non-string data received'); return; }
+    if (raw[0] === 'M') {
+      // Single message
+      let msg;
+      try { msg = JSON.parse(raw.slice(1)); } catch(e) { console.warn('[P2P] Parse error', e); return; }
+      console.log('[P2P] Data from', conn.peer, ':', msg && msg.type);
+      handleMessage(conn.peer, msg);
+    } else if (raw[0] === 'C') {
+      // Chunk: C<transferId>:<index>:<total>:<payload>
+      const colon1 = raw.indexOf(':', 1);
+      const colon2 = raw.indexOf(':', colon1 + 1);
+      const colon3 = raw.indexOf(':', colon2 + 1);
+      const transferId = raw.slice(1, colon1);
+      const index = parseInt(raw.slice(colon1 + 1, colon2), 10);
+      const total = parseInt(raw.slice(colon2 + 1, colon3), 10);
+      const slice = raw.slice(colon3 + 1);
+      if (!inboundChunks[transferId]) {
+        inboundChunks[transferId] = { total, received: 0, chunks: new Array(total) };
+      }
+      const t = inboundChunks[transferId];
+      t.chunks[index] = slice;
+      t.received++;
+      if (t.received === t.total) {
+        delete inboundChunks[transferId];
+        let msg;
+        try { msg = JSON.parse(t.chunks.join('')); } catch(e) { console.warn('[P2P] Chunk reassembly error', e); return; }
+        console.log('[P2P] Reassembled from', conn.peer, ':', msg && msg.type);
+        handleMessage(conn.peer, msg);
+      }
+    }
   });
 
   conn.on('close', () => {
@@ -408,9 +436,26 @@ function setupConn(conn) {
   });
 }
 
+// ====== CHUNKED MESSAGING ======
+// PeerJS JSON channel limit is ~16KB. We serialize to a string ourselves,
+// prefix with 'M' (single message) or 'C...' (chunk), keeping each packet small.
+const CHUNK_SIZE = 8000;
+const inboundChunks = {};
+
 function send(conn, msg) {
-  // PeerJS handles serialization natively — send plain objects
-  try { if (conn && conn.open) conn.send(msg); } catch(e) { console.warn('send error', e); }
+  if (!conn || !conn.open) return;
+  const json = JSON.stringify(msg);
+  if (json.length <= CHUNK_SIZE) {
+    try { conn.send('M' + json); } catch(e) { console.warn('send error', e); }
+    return;
+  }
+  const transferId = Math.random().toString(36).substr(2, 8);
+  const total = Math.ceil(json.length / CHUNK_SIZE);
+  for (let i = 0; i < total; i++) {
+    const slice = json.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
+    const header = 'C' + transferId + ':' + String(i).padStart(4,'0') + ':' + String(total).padStart(4,'0') + ':';
+    try { conn.send(header + slice); } catch(e) { console.warn('chunk send error', e); return; }
+  }
 }
 
 function broadcast(msg, excludePeer) {
@@ -420,14 +465,12 @@ function broadcast(msg, excludePeer) {
 }
 
 function handleMessage(fromPeer, msg) {
-  // PeerJS delivers already-parsed objects; no JSON.parse needed
   if (!msg || !msg.type) return;
 
   if (msg.type === 'handshake') {
     state.peers[fromPeer] = state.peers[fromPeer] || { conn: null, name: '?', color: '#888' };
     state.peers[fromPeer].name = msg.name;
     state.peers[fromPeer].color = msg.color;
-    // Share peer list so new joiner can mesh with everyone
     const peerIds = Object.keys(state.peers).filter(p => p !== fromPeer);
     if (peerIds.length > 0 && state.peers[fromPeer].conn) {
       send(state.peers[fromPeer].conn, { type: 'peer_list', peers: peerIds });
@@ -539,13 +582,13 @@ function onImageSelect(input) {
     // Resize large images before storing
     const img = new Image();
     img.onload = () => {
-      const MAX = 600;
+      const MAX = 400; // keep base64 small for P2P chunking
       const scale = Math.min(1, MAX / Math.max(img.width, img.height));
       const canvas = document.createElement('canvas');
-      canvas.width = img.width * scale;
-      canvas.height = img.height * scale;
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
       canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-      const b64 = canvas.toDataURL('image/jpeg', 0.7).split(',')[1];
+      const b64 = canvas.toDataURL('image/jpeg', 0.6).split(',')[1];
       state.pendingImageB64 = b64;
       document.getElementById('image-preview').src = 'data:image/jpeg;base64,' + b64;
       document.getElementById('image-preview-wrap').style.display = 'block';
