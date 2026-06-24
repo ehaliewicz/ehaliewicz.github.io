@@ -313,46 +313,67 @@ function joinNetwork() {
   state.myColor = randomColor();
   state.roomId = roomInput || randomId();
   document.getElementById('modal-overlay').classList.remove('active');
-  updateRoomInfo();
+  // Don't call updateRoomInfo yet — peerId isn't known until peer.on('open')
   initPeer();
 }
 
 function initPeer() {
-  setStatus('connecting', 'Connecting…');
+  setStatus('connecting', 'Connecting to signaling server…');
   peer = new Peer(undefined, {
     host: '0.peerjs.com', port: 443, path: '/', secure: true,
-    config: { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] }
+    config: { iceServers: [
+      { urls: 'stun:stun.l.google.com:19302' },
+      { urls: 'stun:stun1.l.google.com:19302' },
+    ]}
   });
 
   peer.on('open', id => {
     state.myPeerId = id;
-    setStatus('connected', 'Connected');
+    console.log('[P2P] My peer ID:', id);
+    setStatus('connected', 'Connected · ID: ' + id.substr(0,6) + '…');
     updateRoomInfo();
-    // Try connecting to room "anchor" peer via a known-ish ID derived from room
     tryJoinRoom();
   });
 
-  peer.on('connection', conn => handleIncomingConn(conn));
+  peer.on('connection', conn => {
+    console.log('[P2P] Incoming connection from', conn.peer);
+    handleIncomingConn(conn);
+  });
+
+  peer.on('disconnected', () => {
+    setStatus('error', 'Disconnected — reconnecting…');
+    peer.reconnect();
+  });
 
   peer.on('error', err => {
-    console.warn('Peer error:', err);
-    setStatus('error', 'Error: ' + err.type);
+    console.warn('[P2P] Error:', err.type, err);
+    if (err.type === 'peer-unavailable') {
+      setStatus('connected', 'Connected (host peer offline)');
+    } else {
+      setStatus('error', 'Error: ' + err.type);
+    }
   });
 }
 
 function tryJoinRoom() {
-  // We encode room participants by broadcasting to peers that share room IDs stored in URL
-  // The real mechanism: when you share the link, it includes your peer ID as host
   const url = new URL(location.href);
   const hostId = url.searchParams.get('host');
+  console.log('[P2P] tryJoinRoom — hostId from URL:', hostId, 'myId:', state.myPeerId);
   if (hostId && hostId !== state.myPeerId) {
+    console.log('[P2P] Connecting to host:', hostId);
     connectToPeer(hostId);
+  } else {
+    console.log('[P2P] No host to connect to — I am the first peer');
   }
 }
 
+
+
 function connectToPeer(peerId) {
-  if (state.peers[peerId] || peerId === state.myPeerId) return;
-  const conn = peer.connect(peerId, { reliable: true });
+  if (peerId === state.myPeerId) return;
+  if (state.peers[peerId] && state.peers[peerId].conn && state.peers[peerId].conn.open) return;
+  console.log('[P2P] Connecting to peer:', peerId);
+  const conn = peer.connect(peerId, { reliable: true, serialization: 'json' });
   setupConn(conn);
 }
 
@@ -362,34 +383,34 @@ function handleIncomingConn(conn) {
 
 function setupConn(conn) {
   conn.on('open', () => {
-    // Register peer temporarily
-    if (!state.peers[conn.peer]) {
-      state.peers[conn.peer] = { conn, name: '?', color: '#888' };
-    } else {
-      state.peers[conn.peer].conn = conn;
-    }
-    // Send our handshake + all our posts
+    console.log('[P2P] Connection open with:', conn.peer);
+    state.peers[conn.peer] = { conn, name: '?', color: '#888' };
     send(conn, { type: 'handshake', name: state.myName, color: state.myColor, peerId: state.myPeerId });
     send(conn, { type: 'sync_all', posts: state.posts });
     updatePeerCount();
   });
 
-  conn.on('data', data => handleMessage(conn.peer, data));
+  conn.on('data', data => {
+    console.log('[P2P] Data from', conn.peer, ':', data && data.type);
+    handleMessage(conn.peer, data);
+  });
 
   conn.on('close', () => {
+    console.log('[P2P] Connection closed:', conn.peer);
     delete state.peers[conn.peer];
     updatePeerCount();
   });
 
   conn.on('error', err => {
-    console.warn('Conn error:', err);
+    console.warn('[P2P] Conn error:', conn.peer, err);
     delete state.peers[conn.peer];
     updatePeerCount();
   });
 }
 
 function send(conn, msg) {
-  try { conn.send(JSON.stringify(msg)); } catch(e) {}
+  // PeerJS handles serialization natively — send plain objects
+  try { if (conn && conn.open) conn.send(msg); } catch(e) { console.warn('send error', e); }
 }
 
 function broadcast(msg, excludePeer) {
@@ -398,45 +419,40 @@ function broadcast(msg, excludePeer) {
   });
 }
 
-function handleMessage(fromPeer, rawData) {
-  let msg;
-  try { msg = typeof rawData === 'string' ? JSON.parse(rawData) : rawData; } catch(e) { return; }
+function handleMessage(fromPeer, msg) {
+  // PeerJS delivers already-parsed objects; no JSON.parse needed
+  if (!msg || !msg.type) return;
 
-  switch(msg.type) {
-    case 'handshake':
-      state.peers[fromPeer] = state.peers[fromPeer] || { conn: null, name: '?', color: '#888' };
-      state.peers[fromPeer].name = msg.name;
-      state.peers[fromPeer].color = msg.color;
-      // Share our peer list (mesh)
-      const peerIds = Object.keys(state.peers).filter(p => p !== fromPeer);
-      if (peerIds.length > 0) {
-        send(state.peers[fromPeer].conn, { type: 'peer_list', peers: peerIds });
-      }
-      updatePeerCount();
-      break;
+  if (msg.type === 'handshake') {
+    state.peers[fromPeer] = state.peers[fromPeer] || { conn: null, name: '?', color: '#888' };
+    state.peers[fromPeer].name = msg.name;
+    state.peers[fromPeer].color = msg.color;
+    // Share peer list so new joiner can mesh with everyone
+    const peerIds = Object.keys(state.peers).filter(p => p !== fromPeer);
+    if (peerIds.length > 0 && state.peers[fromPeer].conn) {
+      send(state.peers[fromPeer].conn, { type: 'peer_list', peers: peerIds });
+    }
+    updatePeerCount();
 
-    case 'peer_list':
-      msg.peers.forEach(pid => { if (pid !== state.myPeerId) connectToPeer(pid); });
-      break;
+  } else if (msg.type === 'peer_list') {
+    msg.peers.forEach(pid => { if (pid !== state.myPeerId) connectToPeer(pid); });
 
-    case 'sync_all':
-      let changed = false;
-      Object.values(msg.posts).forEach(post => {
-        if (!state.posts[post.id]) { state.posts[post.id] = post; changed = true; }
-      });
-      if (changed) { layoutGraph(); renderThread(); }
-      break;
+  } else if (msg.type === 'sync_all') {
+    let changed = false;
+    Object.values(msg.posts).forEach(post => {
+      if (!state.posts[post.id]) { state.posts[post.id] = post; changed = true; }
+    });
+    if (changed) { layoutGraph(); renderThread(); }
 
-    case 'new_post':
-      if (!state.posts[msg.post.id]) {
-        state.posts[msg.post.id] = msg.post;
-        if (!state.nodePositions[msg.post.id]) placeNewNode(msg.post);
-        renderGraph();
-        if (state.focusedPostId && isAncestorOrDescendant(msg.post.id, state.focusedPostId)) renderThread();
-        broadcast(msg, fromPeer); // relay
-        updateHint();
-      }
-      break;
+  } else if (msg.type === 'new_post') {
+    if (!state.posts[msg.post.id]) {
+      state.posts[msg.post.id] = msg.post;
+      if (!state.nodePositions[msg.post.id]) placeNewNode(msg.post);
+      renderGraph();
+      if (state.focusedPostId && isAncestorOrDescendant(msg.post.id, state.focusedPostId)) renderThread();
+      broadcast(msg, fromPeer);
+      updateHint();
+    }
   }
 }
 
@@ -1096,11 +1112,16 @@ function updatePeerCount() {
 
 function copyRoomLink() {
   const url = new URL(location.href);
+  // Always build from state — don't rely on history.replaceState having run
   url.searchParams.set('room', state.roomId);
   url.searchParams.set('host', state.myPeerId);
-  navigator.clipboard.writeText(url.toString()).then(() => {
+  const link = url.toString();
+  navigator.clipboard.writeText(link).then(() => {
     const btn = document.querySelector('[onclick="copyRoomLink()"]');
     if (btn) { btn.textContent = 'Copied!'; setTimeout(() => btn.textContent = 'Copy invite link', 2000); }
+  }).catch(() => {
+    // Fallback: prompt
+    window.prompt('Copy this invite link:', link);
   });
 }
 
