@@ -113,11 +113,10 @@ body { background: var(--bg); color: var(--text); font-family: var(--font); heig
   background: var(--bg2);
 }
 #reply-banner {
-  display: none; background: var(--bg3); border-radius: 6px;
-  padding: 6px 10px; font-size: 12px; color: var(--muted); margin-bottom: 8px;
-  display: none; align-items: center; gap: 6px;
+  background: var(--bg3); border-radius: 6px;
+  padding: 5px 10px; font-size: 12px; color: var(--muted); margin-bottom: 8px;
+  display: flex; align-items: center; gap: 6px;
 }
-#reply-banner.active { display: flex; }
 #cancel-reply { margin-left: auto; background: none; border: none; color: var(--muted); cursor: pointer; font-size: 16px; }
 #cancel-reply:hover { color: var(--text); }
 #compose-textarea {
@@ -226,10 +225,9 @@ body { background: var(--bg); color: var(--text); font-family: var(--font); heig
     </div>
     <div id="compose-area">
       <div id="reply-banner">
-        <span id="reply-banner-text">Replying to post</span>
-        <button id="cancel-reply" onclick="cancelReply()">✕</button>
+        <span id="reply-banner-text">New thread</span>
       </div>
-      <textarea id="compose-textarea" placeholder="Write a post…" maxlength="1000" oninput="onTextInput(this)"></textarea>
+      <textarea id="compose-textarea" placeholder="Start a new thread…" maxlength="1000" oninput="onTextInput(this)"></textarea>
       <div id="compose-bottom">
         <label id="image-label" title="Attach image">
           🖼
@@ -447,13 +445,16 @@ function submitPost() {
   const text = document.getElementById('compose-textarea').value.trim();
   if (!text) return;
 
+  // Reply to focused post implicitly; top-level if none focused
+  const parentId = state.focusedPostId || null;
+
   const post = {
     id: randomId(),
     text,
     authorName: state.myName,
     authorColor: state.myColor,
     authorPeerId: state.myPeerId,
-    parentId: state.replyingToId || null,
+    parentId,
     timestamp: Date.now(),
     image: state.pendingImageB64 || null,
   };
@@ -466,20 +467,14 @@ function submitPost() {
   // Reset compose
   document.getElementById('compose-textarea').value = '';
   removeImage();
-  cancelReply();
   document.getElementById('char-count').textContent = '0 / 1000';
 
+  // Focus the new post and refresh thread
+  state.focusedPostId = post.id;
+  updateComposeBanner();
   renderGraph();
+  renderThread();
   updateHint();
-
-  // If we're viewing a thread related to this post, refresh it
-  if (state.replyingToId) {
-    state.focusedPostId = post.id;
-    renderThread();
-  } else {
-    state.focusedPostId = post.id;
-    renderThread();
-  }
 }
 
 function onTextInput(el) {
@@ -487,24 +482,37 @@ function onTextInput(el) {
 }
 
 function newTopLevelPost() {
-  cancelReply();
   state.focusedPostId = null;
+  updateComposeBanner();
   renderThread();
   document.getElementById('compose-textarea').focus();
 }
 
 function replyTo(postId) {
-  state.replyingToId = postId;
-  const post = state.posts[postId];
-  const banner = document.getElementById('reply-banner');
-  document.getElementById('reply-banner-text').textContent = 'Replying to ' + post.authorName;
-  banner.classList.add('active');
+  state.focusedPostId = postId;
+  updateComposeBanner();
+  renderThread();
   document.getElementById('compose-textarea').focus();
 }
 
 function cancelReply() {
-  state.replyingToId = null;
-  document.getElementById('reply-banner').classList.remove('active');
+  // kept for any remaining callers; now a no-op
+}
+
+function updateComposeBanner() {
+  const banner = document.getElementById('reply-banner-text');
+  const ta = document.getElementById('compose-textarea');
+  const btn = document.getElementById('post-btn');
+  if (state.focusedPostId && state.posts[state.focusedPostId]) {
+    const author = state.posts[state.focusedPostId].authorName;
+    banner.textContent = 'Replying to ' + author;
+    ta.placeholder = 'Write a reply…';
+    btn.textContent = 'Reply';
+  } else {
+    banner.textContent = 'New thread';
+    ta.placeholder = 'Start a new thread…';
+    btn.textContent = 'Post';
+  }
 }
 
 function onImageSelect(input) {
@@ -570,15 +578,16 @@ function renderThread() {
   const empty = document.getElementById('thread-empty');
 
   if (!state.focusedPostId || !state.posts[state.focusedPostId]) {
-    scroll.innerHTML = '';
-    scroll.appendChild(empty);
-    empty.textContent = 'Click a post in the graph to see its thread.';
+    // Clear all children except #thread-empty, then show it
+    Array.from(scroll.children).forEach(el => { if (el !== empty) el.remove(); });
+    empty.style.display = 'block';
     document.getElementById('thread-title').textContent = 'Select a post';
     return;
   }
 
-  empty.remove();
-  scroll.innerHTML = '';
+  empty.style.display = 'none';
+  // Clear all children except #thread-empty
+  Array.from(scroll.children).forEach(el => { if (el !== empty) el.remove(); });
 
   const focused = state.posts[state.focusedPostId];
   const ancestors = getAncestors(state.focusedPostId);
@@ -636,8 +645,7 @@ function makePostCard(post, isFocused, isReply) {
     <div class="post-body">${escHtml(post.text)}</div>
     ${post.image ? `<img class="post-image" src="data:image/jpeg;base64,${post.image}" alt="attached image">` : ''}
     <div class="post-actions">
-      <button class="reply-btn" onclick="replyTo('${post.id}');focusPost('${post.id}')">Reply</button>
-      ${!isFocused ? `<button class="reply-btn" onclick="focusPost('${post.id}')">View thread</button>` : ''}
+      ${!isFocused ? `<button class="reply-btn" onclick="focusPost('${post.id}')">View thread</button>` : '<span style="font-size:12px;color:var(--muted)">Focused — post below to reply</span>'}
       <span class="reply-count">${getDirectChildren(post.id).length} replies</span>
     </div>
   `;
@@ -646,6 +654,7 @@ function makePostCard(post, isFocused, isReply) {
 
 function focusPost(postId) {
   state.focusedPostId = postId;
+  updateComposeBanner();
   renderThread();
   // Center the graph on this node
   const pos = state.nodePositions[postId];
@@ -659,8 +668,7 @@ function focusPost(postId) {
 
 function closeThread() {
   state.focusedPostId = null;
-  state.replyingToId = null;
-  document.getElementById('reply-banner').classList.remove('active');
+  updateComposeBanner();
   renderThread();
 }
 
@@ -687,6 +695,18 @@ function placeNewNode(post) {
       y: 200 + Math.floor(i / 4) * 200,
     };
   }
+  if (hasOverlap(post.id)) layoutGraph();
+}
+
+function hasOverlap(newId) {
+  const THRESHOLD = 80;
+  const a = state.nodePositions[newId];
+  if (!a) return false;
+  return Object.entries(state.nodePositions).some(([id, b]) => {
+    if (id === newId) return false;
+    const dx = a.x - b.x, dy = a.y - b.y;
+    return Math.sqrt(dx*dx + dy*dy) < THRESHOLD;
+  });
 }
 
 function layoutGraph() {
@@ -699,17 +719,18 @@ function layoutGraph() {
   const ATTRACT = 0.03;
   const EDGE_LEN = 150;
 
-  // Initialize positions for any missing nodes
-  posts.forEach(p => {
-    if (!state.nodePositions[p.id]) {
-      state.nodePositions[p.id] = {
-        x: 300 + (Math.random() - 0.5) * 400,
-        y: 300 + (Math.random() - 0.5) * 400,
-      };
-    }
+  // Always reset to a tight cluster so re-layout is idempotent
+  posts.forEach((p, i) => {
+    const angle = (i / posts.length) * 2 * Math.PI;
+    const r = Math.min(80, posts.length * 8);
+    state.nodePositions[p.id] = {
+      x: 300 + Math.cos(angle) * r + (Math.random() - 0.5) * 20,
+      y: 300 + Math.sin(angle) * r + (Math.random() - 0.5) * 20,
+    };
   });
 
   for (let iter = 0; iter < ITERATIONS; iter++) {
+    const cooling = 1 - iter / ITERATIONS;
     const forces = {};
     posts.forEach(p => { forces[p.id] = { x: 0, y: 0 }; });
 
@@ -742,14 +763,15 @@ function layoutGraph() {
       forces[p.parentId].y -= dy / dist * f;
     });
 
-    // Apply
+    // Apply with cooling so movement shrinks each iteration
     posts.forEach(p => {
       const pos = state.nodePositions[p.id];
-      pos.x += forces[p.id].x * 0.5;
-      pos.y += forces[p.id].y * 0.5;
+      pos.x += forces[p.id].x * cooling * 0.4;
+      pos.y += forces[p.id].y * cooling * 0.4;
     });
   }
 
+  centerGraph();
   renderGraph();
   updateHint();
 }
@@ -771,11 +793,12 @@ function initGL() {
     uniform vec2 u_res;
     uniform vec2 u_pan;
     uniform float u_scale;
+    uniform float u_pointSize;
     void main() {
       vec2 pos = a_pos * u_scale + u_pan;
       vec2 clip = (pos / u_res) * 2.0 - 1.0;
       gl_Position = vec4(clip.x, -clip.y, 0, 1);
-      gl_PointSize = 12.0;
+      gl_PointSize = u_pointSize;
     }
   `;
   const fsSrc = `
@@ -844,6 +867,7 @@ function renderGraph() {
   const scaleLoc = gl.getUniformLocation(prog, 'u_scale');
   const colorLoc = gl.getUniformLocation(prog, 'u_color');
   const circleLoc = gl.getUniformLocation(prog, 'u_circle');
+  const pointSizeLoc = gl.getUniformLocation(prog, 'u_pointSize');
   const posLoc = gl.getAttribLocation(prog, 'a_pos');
 
   gl.uniform2f(resLoc, canvas.width, canvas.height);
@@ -866,11 +890,12 @@ function renderGraph() {
     gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
     gl.uniform4f(colorLoc, 0.25, 0.25, 0.25, 0.8);
     gl.uniform1i(circleLoc, 0);
+    gl.uniform1f(pointSizeLoc, 12.0);
     gl.lineWidth(1.5);
     gl.drawArrays(gl.LINES, 0, edgeVerts.length / 2);
   }
 
-  // Draw nodes (two passes: shadow ring for focused, then filled circles)
+  // Draw nodes
   posts.forEach(p => {
     const pos = state.nodePositions[p.id];
     if (!pos) return;
@@ -885,13 +910,28 @@ function renderGraph() {
     gl.uniform1i(circleLoc, 1);
 
     if (isFocused) {
-      // Outer ring
-      gl.uniform4f(colorLoc, 0.486, 0.424, 0.941, 0.35);
+      // White ring behind the node
+      gl.uniform1f(pointSizeLoc, 22.0);
+      gl.uniform4f(colorLoc, 1.0, 1.0, 1.0, 1.0);
+      gl.drawArrays(gl.POINTS, 0, 1);
+      // Accent halo
+      gl.uniform1f(pointSizeLoc, 28.0);
+      gl.uniform4f(colorLoc, 0.486, 0.424, 0.941, 0.5);
+      gl.drawArrays(gl.POINTS, 0, 1);
+      // White ring again on top of halo
+      gl.uniform1f(pointSizeLoc, 22.0);
+      gl.uniform4f(colorLoc, 1.0, 1.0, 1.0, 1.0);
+      gl.drawArrays(gl.POINTS, 0, 1);
+    } else if (isHovered) {
+      // Subtle white ring on hover
+      gl.uniform1f(pointSizeLoc, 20.0);
+      gl.uniform4f(colorLoc, 1.0, 1.0, 1.0, 0.5);
       gl.drawArrays(gl.POINTS, 0, 1);
     }
 
     const col = hexToRgb(p.authorColor) || [0.48, 0.42, 0.94];
     const alpha = (isFocused || isHovered) ? 1.0 : 0.85;
+    gl.uniform1f(pointSizeLoc, 14.0);
     gl.uniform4f(colorLoc, col[0], col[1], col[2], alpha);
     gl.drawArrays(gl.POINTS, 0, 1);
   });
@@ -939,6 +979,7 @@ function setupCanvasEvents(canvas) {
       const hit = hitTest(e.clientX, e.clientY);
       if (hit) {
         state.focusedPostId = hit;
+        updateComposeBanner();
         renderGraph();
         renderThread();
       }
