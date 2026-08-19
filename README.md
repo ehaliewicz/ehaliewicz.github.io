@@ -5,7 +5,12 @@
 ### I love working on graphics, compilers, and games. 
 
 # Projects
-Here are some of the projects I've been working on recently.
+Here are some of the projects I've worked on.
+
+## East Wind - A 4-player riichi mahjong game.
+
+### [itch.io page](https://ehaliewicz.itch.io/mahjong-demo)
+
 
 ## 6DOF Raycast engine (2025-current)
 
@@ -18,8 +23,10 @@ Here are some of the projects I've been working on recently.
 
 ### [Play around with the Web version](https://ehaliewicz.github.io/raycast.html) 
 #### this is an older version, so it is missing 6DOF and other features for the time being.
+#### The focus stealing is a little buggy, enable edit mode when trying to quit!
+
 #### Try toggling edit mode with 'E', and modifying some tiles.
-#### Controls
+#### (Non-exhaustive) Controls
 ```
 WASD and mouse controls.
 
@@ -33,6 +40,7 @@ L - cycles light levels (kinda half-baked currently)
 Outside of edit mode 
 R -> change resolution
 Shift-R -> change render resolution
+Enter -> open door
 ```
 
 #### Slopes and 6dof camera controls in a 2.5D raycaster
@@ -43,7 +51,7 @@ Shift-R -> change render resolution
 
 ![Real-time editing](raycaster_editing.png)
 #### Videos
-[![Video](https://img.youtube.com/vi/BHabQy3S31I/0.jpg)](https://www.youtu.be/BHabQy3S31I)
+[![Video](https://img.youtube.com/vi/BHabQy3S31I/0.jpg)](https://youtu.be/BHabQy3S31I)
 
 ## Voxel renderer (2023-2025)
 
