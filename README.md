@@ -43,7 +43,7 @@ Shift-R -> change render resolution
 
 ![Real-time editing](raycaster_editing.png)
 #### Videos
-[![Video](https://img.youtube.com/vi/BHabQy3S31I/0.jpg)]((https://www.youtube.com/watch?v=BHabQy3S31I)
+[![Video](https://img.youtube.com/vi/BHabQy3S31I/0.jpg)](https://www.youtu.be/BHabQy3S31I)
 
 ## Voxel renderer (2023-2025)
 
