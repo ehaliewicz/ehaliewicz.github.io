@@ -9,12 +9,32 @@ Here are some of the projects I've been working on recently.
 
 ## 6DOF Raycast engine (2025-current)
 
-### [Source code](https://github.com/ehaliewicz/raycaster).
-
+### [Source code](https://github.com/ehaliewicz/raycaster)  
 
 ### After figuring out how a 6dof camera can work in a "2.5D" engine, I decided to go back to a simple grid map format.  
 ### In addition to 6 degrees of freedom (pitch, roll, yaw, and translation in all 3 axes), this engine supports slopes, 45 degree walls, floor and ceiling heights, per-face lighting, z-buffered sprites, and real-time editing.
 ### You can edit and build a map in real-time, and your changes are saved when you exit.
+
+
+### [Play around with the Web version](https://ehaliewicz.github.io/raycast.html) 
+#### this is an older version, so it is missing 6DOF and other features for the time being.
+#### Try toggling edit mode with 'E', and modifying some tiles.
+#### Controls
+
+##### WASD and mouse controls.
+##### I/K/Space -> look up/down/reset lookup
+##### Left/Right -> look left and right
+
+#### Edit mode-
+##### E - disable edit mode
+##### You can click on stuff, use arrow keys to raise lower
+##### R cycles textures of selected cell
+##### T cycles cell type -> NORMAL, DIAGONALS, SLOPES, DOORS.  If a cell seems broken, T usually helps.
+##### L - cycles light levels (kinda half-baked currently)
+
+#### outside of edit mode 
+##### R -> change resolution
+##### Shift-R -> change render resolution
 
 
 #### Slopes and 6dof camera controls in a 2.5D raycaster
@@ -24,11 +44,12 @@ Here are some of the projects I've been working on recently.
 #### Real-time editing in the raycaster engine
 
 ![Real-time editing](raycaster_editing.png)
+#### Videos
+[![Video](https://www.youtube.com/watch?v=BHabQy3S31I)
 
 ## Voxel renderer (2023-2025)
 
 ### A CPU powered (no GPU!) 5DOF voxel renderer, supporting arbitrary voxel geometry, transparency, deferred shading, and horizon fogging.  5DOF means that the camera can rotate left and right, roll left and right, move up/down, left/right, forward/back.  It cannot do correct pitch up/down (the rendering algorithm is a distant cousin of the voxelspace comanche style voxel renderer), but it can shear the projected voxels to approximate the affect in screen-space.
-
 
 ### [Source code](https://github.com/ehaliewicz/voxel).
 
